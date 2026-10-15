@@ -1,0 +1,15 @@
+# 强制 LF：deploy.sh 要在 Linux 服务器上执行，CRLF 会直接 bad interpreter
+*.sh text eol=lf
+
+# Python/JSON/TS 统一 LF，避免跨平台 diff 噪音
+*.py text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+
+# 锁文件同样保持 LF
+package-lock.json text eol=lf

@@ -1,0 +1,34 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ---- 密钥（永远不要进仓库）----
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+.npm/
+
+# ---- 构建产物说明 ----
+# dist/ 有意提交：部署目标机（腾讯云 2G 无 node）直接用预构建产物，
+# 见 deploy/DEPLOY.md §前端产物。本地改前端后需重新 npm run build 再提交。
+# frontend/.env 是开发期开关（VITE_USE_MOCK=true），不进仓库。
+
+# ---- 系统/编辑器 ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- 临时文件 ----
+tmp_*
+*.log

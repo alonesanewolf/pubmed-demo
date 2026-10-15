@@ -1,0 +1,9 @@
+node_modules/
+# dist/ 有意入库：部署目标机（腾讯云 2G 无 node）直接用预构建产物上线，
+# 见 deploy/DEPLOY.md §前端产物。本地改前端后需重新 npm run build 再提交。
+# dist/
+dist-ssr/
+*.local
+.env.local
+.env.*.local
+.DS_Store

@@ -1,0 +1,42 @@
+# ============================================================
+# PubMed 领域分析 Demo —— systemd 单元（模板文件，勿直接使用）
+#
+# deploy.sh 替换 __INSTALL_DIR__ / __APP_PORT__ / __MEM_MAX__ / __APP_USER__
+# 后安装到 /etc/systemd/system/pubmed-demo.service。
+#
+# 设计取舍（都可以在面试里讲）：
+#   · User=pubmed：不用 root 跑 Web 服务。机器上现有的服务是 root 跑的，
+#     那是历史遗留；新服务按最小权限来。
+#   · 只听 127.0.0.1：公网入口只有 nginx，应用端口不对互联网暴露。
+#   · MemoryMax=512M：这台机器总共 2G，MySQL+Redis+两个 gunicorn 已占
+#     约 690M。给本服务设硬上限，万一内存泄漏也不会拖垮整台机器。
+#   · 不 Requires mysql/redis：本服务零外部依赖（SQLite 都不用，
+#     预置数据是 JSON 文件），演示服务不该被别的服务的状态绑住。
+# ============================================================
+
+[Unit]
+Description=PubMed Domain Analytics Demo (FastAPI + uvicorn)
+Documentation=file:__INSTALL_DIR__/deploy/DEPLOY.md
+After=network.target
+
+[Service]
+Type=exec
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=__INSTALL_DIR__/backend
+EnvironmentFile=__INSTALL_DIR__/backend/.env
+ExecStart=__INSTALL_DIR__/backend/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port __APP_PORT__ --workers 1 --no-access-log
+Restart=always
+RestartSec=5
+
+# ---- 资源上限：保护同机的其他服务 ----
+MemoryMax=__MEM_MAX__
+
+# ---- 最小权限 ----
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

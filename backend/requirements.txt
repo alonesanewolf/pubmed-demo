@@ -1,0 +1,22 @@
+# ---- Web 框架 ----
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+# ---- HTTP 客户端（异步抓 PubMed）----
+httpx==0.28.1
+
+# ---- multipart 表单（POST /api/journals/import 上传期刊表必须）----
+# 少了它 FastAPI 在 import 阶段就 RuntimeError，服务整个起不来
+python-multipart==0.0.20
+
+# ---- 数值计算（TF-IDF / KMeans，纯 numpy，不引 sklearn）----
+numpy==1.26.4
+
+# 说明：
+# · XML 解析用标准库 xml.etree.ElementTree，不装 lxml（省内存，2G 机器友好）
+# · 英文分词用自带正则分词器，不装 nltk（nltk 需要额外下载语料，服务器上容易踩坑）
+# · sqlite3 是 Python 标准库，无需安装
+# · 不引 APScheduler：项目里没有任何定时任务，声明了不用的依赖只会拖慢部署、
+#   并在代码评审时变成「为什么装了不用」的疑问。缓存刷新真要做时再加不迟。
