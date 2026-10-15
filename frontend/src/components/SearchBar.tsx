@@ -74,7 +74,7 @@ export default function SearchBar({
       </div>
 
       <div className="source-line-row">
-        <span className="pill pill-info">数据来源：{sourceLabel ?? 'PubMed（NCBI E-utilities）'}</span>
+        <span className="pill pill-info">数据来源：{sourceLabel ?? 'PubMed'}</span>
         {activeLabel && <span className="muted">当前数据集：{activeLabel}</span>}
         {health && (
           <>

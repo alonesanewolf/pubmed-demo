@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-v4-flash"
     deepseek_timeout: int = 90
     llm_max_retries: int = 2
+    # 综述的输出预算。deepseek-v4 系是推理模型，reasoning_content 与 content
+    # 共用这一个预算 —— 推理阶段吃光预算时 content 直接为空（finish_reason=length）。
+    # 暴露成环境变量而不是写死在调用处：降级提示里写着「请调大 max_tokens」，
+    # 运营侧改不动代码的话，这条提示就是假的。
+    llm_review_max_tokens: int = 8192
 
     # ---------- 服务 ----------
     host: str = "0.0.0.0"

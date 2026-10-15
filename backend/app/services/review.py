@@ -167,10 +167,17 @@ def _parse_json_labels(text: str, *, expected: int) -> list[str] | None:
 
 # ---------- 综述生成 ----------
 
-# 单篇摘要送进模型时的截断长度（字符）。
-# 100 篇 × 截断是成本控制的主要手段：原始摘要平均 1200 字符，截到 600 大约省一半。
-_ABSTRACT_CHARS = 600
-_MAX_PAPERS_IN_PROMPT = 100
+# 单篇摘要送进模型时的截断长度（字符）与送进模型的篇数上限。
+# 这两个数字直接决定综述 prompt 的规模，而 prompt 规模决定了推理模型会不会
+# 把输出预算烧光：
+#   实测（crispr-gene-editing，1000 篇样本）：
+#     100 篇 × 600 字符 = 73,172 字符 ≈ 4.5 万 token 输入，
+#       推理阶段直接吃光 4096 的输出预算 → content 为空（finish_reason=length）→ 综述降级；
+#     30 篇 × 300 字符 ≈ 1.2 万字符 ≈ 7.5 千 token 输入。
+# 综述只要 500 字，喂 99 篇摘要既让模型在推理里迷路，又把成本抬了一个数量级。
+# ⚠️ 30/300 这组是按 token 估算定的，线上真机验证过之后再改成实测值。
+_ABSTRACT_CHARS = 300
+_MAX_PAPERS_IN_PROMPT = 30
 
 
 def build_review_prompt(
@@ -262,15 +269,25 @@ def validate_and_split(text: str, allowed_pmids: set[str]) -> tuple[list[dict[st
 
     for p in parts:
         p["text"] = re.sub(r"\s{2,}", " ", p["text"]).strip()
-        p["citations"] = [x for x in re.findall(r"\[([\d,\s]+)\]", p["text"])]
+        # 只在**角标块内部**去重。
+        # ⛔ 早期版本把全文所有角标统一替换成「该分点的全部引用」，于是
+        # 每一句话后面都挂上同一长串 PMID，块内还带重复（实测线上输出：
+        # [34653350,34215024,34653350,...]）—— 既冗余，又丢掉了
+        # 「哪句话引用哪几篇」这个溯源关系本身。引用块各归各的，只做块内去重。
+        def _dedup_block(m: re.Match[str]) -> str:
+            nums = re.findall(r"\d{6,9}", m.group(1))
+            seen: set[str] = set()
+            uniq = [n for n in nums if not (n in seen or seen.add(n))]
+            return "[" + ",".join(uniq) + "]" if uniq else m.group(0)
+
+        p["text"] = re.sub(r"\[([\d,\s]+)\]", _dedup_block, p["text"])
+        cited: set[str] = set()
         p["citations"] = [
-            n for block in p["citations"] for n in re.findall(r"\d{6,9}", block)
+            n
+            for block in re.findall(r"\[([\d,\s]+)\]", p["text"])
+            for n in re.findall(r"\d{6,9}", block)
+            if not (n in cited or cited.add(n))
         ]
-        # 校验后把引用整理成统一格式
-        if p["citations"]:
-            p["text"] = re.sub(
-                r"\[([\d,\s]+)\]", "[" + ",".join(p["citations"]) + "]", p["text"]
-            )
     return parts, hallucinated
 
 

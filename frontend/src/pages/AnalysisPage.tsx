@@ -88,7 +88,7 @@ export default function AnalysisPage() {
         onSelectPreset={selectPreset}
         health={health.data}
         loading={dataset.loading}
-        sourceLabel={isMockActive() ? 'Mock 假数据（契约一致）' : null}
+        sourceLabel={isMockActive() ? 'Mock 假数据（契约一致）' : ds?.source || null}
       />
 
       {searchError && (
@@ -142,7 +142,10 @@ export default function AnalysisPage() {
 
           <ClusterPanel clusters={ds.clusters} />
 
-          <Card title={`影响力 Top ${ds.top_papers.length}`} subtitle="默认按影响因子降序，点击列头排序；点行查看详情">
+          <Card
+            title={`影响力 Top ${ds.top_papers.length}`}
+            subtitle="默认按影响因子降序，点击列头排序；点行查看详情。窗口为含最新年份的近 5 个自然年，窗口内不足 100 篇时按同规则用窗口外补齐，窗口内永远排在前面"
+          >
             <TopPapersTable
               papers={ds.top_papers}
               highlightPmid={highlight}

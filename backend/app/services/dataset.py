@@ -329,10 +329,14 @@ async def generate_review(slug: str, *, max_words: int = 500) -> dict[str, Any]:
         abstracts={p.pmid: p.abstract for p in papers if p.abstract},
     )
 
-    # max_tokens=4096 是实测出来的：deepseek-v4-flash 是推理模型，
-    # 长 prompt 下推理要先花掉 ~2100 token，2000 会把 content 整段截成空
-    # （finish_reason=length），4096 实测稳定产出 1200+ 字正文。
-    result = await provider.complete(prompt, system=_REVIEW_SYSTEM, max_tokens=4096)
+    # 输出预算走配置（LLM_REVIEW_MAX_TOKENS，默认 8192），不写死在调用处。
+    # 早期版本写死 4096，且那条「4096 稳定产出」的结论是在输入很小的时候测的 ——
+    # prompt 规模涨到 ~4.5 万 token 之后，推理阶段照样把 4096 烧光（线上实测降级）。
+    # 现在两件事一起做：压缩输入（见 review.py 的 _MAX_PAPERS_IN_PROMPT/_ABSTRACT_CHARS）
+    # + 把预算放大一档并留出配置口。
+    result = await provider.complete(
+        prompt, system=_REVIEW_SYSTEM, max_tokens=get_settings().llm_review_max_tokens
+    )
 
     if not result.ok:
         return {

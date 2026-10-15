@@ -214,6 +214,8 @@ export interface AboutSection {
 
 export interface AboutContent {
   competitors?: AboutCompetitor[];
+  /** 首选键（AboutPage 依次尝试 ai_approach → ai_usage → ai_usage_notes） */
+  ai_approach?: AboutSection[];
   ai_usage?: AboutSection[];
   ai_usage_notes?: AboutSection[];
   data_sources?: AboutSection[];

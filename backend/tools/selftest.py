@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.llm.base import extract_pmids, validate_citations  # noqa: E402
+from app.services.review import validate_and_split  # noqa: E402
 from app.services.analysis import (  # noqa: E402
     build_stats,
     build_wordcloud,
@@ -28,9 +29,12 @@ from app.services.parser import Paper, dedupe_by_pmid, parse_pubmed_xml  # noqa:
 
 PASS, FAIL = "\033[92mPASS\033[0m", "\033[91mFAIL\033[0m"
 _failures: list[str] = []
+_total = 0   # 实际执行的断言条数（README 里那句「N 项断言」必须以它为准）
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
+    global _total
+    _total += 1
     if cond:
         print(f"  {PASS}  {name}")
     else:
@@ -247,6 +251,25 @@ def test_citation_guard() -> None:
     check("抽取多种写法", extract_pmids("a[38123456] b[35123457,38123456]") ==
           ["38123456", "35123457"])
 
+    # 角标去重：只去**块内**重复，各块保持各自的引用。
+    # 早期实现把所有角标统一替换成该分点的全部引用，既重复又丢了溯源关系。
+    # 输入必须是「标记 + 标题」单独一行、正文另起一行 —— head_re 只认
+    # 「一、」「1.」「-」这类分点标记，标题与正文写在一行会被整行当成标题。
+    dup = "一、甲\n结论甲[38123456,38123456]。\n二、乙\n结论乙[35123457][38123456]。"
+    parts, _ = validate_and_split(dup, allowed)
+    if len(parts) != 2:
+        # 切分就错了就别往下索引了：判据失败要红，不能让自测自己崩掉
+        check("分点被正确切分", False, f"{len(parts)} 个：{[p['point'] for p in parts]}")
+    else:
+        check("分点被正确切分", True)
+        check("同一角标块内重复 PMID 被去重",
+              parts[0]["text"].count("38123456") == 1, parts[0]["text"])
+        check("不同角标块保持各自引用",
+              parts[1]["text"].count("38123456") == 1 and "35123457" in parts[1]["text"],
+              parts[1]["text"])
+        check("citations 列表去重且保序",
+              parts[1]["citations"] == ["35123457", "38123456"], str(parts[1]["citations"]))
+
 
 def main() -> int:
     print("=" * 58)
@@ -258,6 +281,7 @@ def main() -> int:
     test_citation_guard()
 
     print("\n" + "=" * 58)
+    print(f" 执行断言 {_total} 项（README 与 docs 里引用的条数以这一行为准）")
     if _failures:
         print(f" {FAIL}  {len(_failures)} 项失败：")
         for f in _failures:

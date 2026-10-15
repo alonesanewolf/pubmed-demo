@@ -104,9 +104,12 @@ src/
 
 ## 5. `/api/about` 的示例结构
 
-后端 `backend/app/content/about.json` **可能还不存在**，此时 `GET /api/about` 返回
-`{"competitors": [], "ai_approach": [], "data_sources": []}`，页面会显示占位文案而不是白屏。
-下面是内容补齐后可直接使用的结构（**放在 backend 侧，前端不创建**）：
+文案由后端 `backend/app/content/about.json` 提供（**内容放在 backend 侧，前端不创建**）。
+该文件不存在时 `GET /api/about` 退化为
+`{"competitors": [], "ai_approach": [], "data_sources": []}`，页面显示占位文案而不是白屏 ——
+所以前端不依赖这份文件是否存在，两边可以各自独立演进。
+
+当前仓库已填入 6 个竞品 / 3 段 AI 思路 / 3 段数据来源 / 1 段边界说明，结构如下：
 
 ```json
 {
@@ -160,8 +163,12 @@ src/
 | `data_sources[]` | 同上 | 数据来源声明 |
 | `sections[]` | 同上 | 兜底渲染区（上述数组都没有时） |
 
-空数组、空字段都会被渲染成带引导的占位文案（提示内容由 `about.json` 提供，文件存在后自动出现），
-所以后端这份文件什么时候补都不影响前端可用性。
+空数组、空字段都会被渲染成带引导的占位文案，所以后端这份文件什么时候补都不影响前端可用性。
+
+⚠️ `src/api/mock/data.ts` 里的 `mockAbout` **故意保持空数组**：文案是单一事实源
+（`backend/app/content/about.json`），复制一份到 mock 会变成两处维护。
+因此 `VITE_USE_MOCK=true` 的本地开发模式下，设计说明页会显示占位文案 —— 那是预期的，
+要看真实文案请起后端并用 `VITE_USE_MOCK=false`。
 
 ## 6. 深浅色
 

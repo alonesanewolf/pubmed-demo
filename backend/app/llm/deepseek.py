@@ -113,9 +113,17 @@ class DeepSeekProvider(LLMProvider):
                         # max_tokens 预算烧光，content 被截成空（finish_reason=length）。
                         # 这个症状必须能在降级原因里自我解释，否则现场只能干瞪眼。
                         finish = choice.get("finish_reason")
+                        if finish == "length" and attempt < s.llm_max_retries:
+                            # 预算不足不等于必须降级：把 max_tokens 翻倍再试一轮
+                            # （上限 32K）。现场演示不该因为预算估小了直接掉进
+                            # 纯统计模式 —— 那是真故障，这是参数没估准。
+                            payload["max_tokens"] = min(int(payload["max_tokens"]) * 2, 32768)
+                            last_error = f"max_tokens 预算不足，已放大至 {payload['max_tokens']} 重试"
+                            await asyncio.sleep(1 + random.uniform(0, 1))
+                            continue
                         hint = (
                             "（输出达到 max_tokens 上限被截断——推理模型先花预算，"
-                            "请调大 max_tokens）"
+                            "请调大 LLM_REVIEW_MAX_TOKENS）"
                             if finish == "length" else ""
                         )
                         return LLMResult.degraded(f"模型返回空内容{hint}", self.model)

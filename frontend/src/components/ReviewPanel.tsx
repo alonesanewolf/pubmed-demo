@@ -122,7 +122,7 @@ export default function ReviewPanel({
       {stage === 'idle' && (
         <div className="review-idle">
           <p>
-            综述由后端调用大模型生成，约需 30–60 秒。生成结果带引用角标，
+            综述由后端调用大模型生成，约需 40–70 秒（实测 50–66 秒）。生成结果带引用角标，
             可点击跳转到下方 Top100 对应文献。
           </p>
           <button type="button" className="btn btn-primary" onClick={run}>
