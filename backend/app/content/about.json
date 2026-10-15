@@ -127,7 +127,7 @@
       "title": "文献数据",
       "body": "PubMed / MEDLINE。采集有两条通道，预置数据集的 source 字段如实标注每批数据走的是哪条：NCBI E-utilities（esearch + efetch，协议原生）与 Europe PMC REST API（EMBL-EBI 的 MEDLINE 镜像，resultType=core 含摘要/MeSH/文献类型）。当前内置 5 个真实领域数据集，各 1000 篇，服务器只读 JSON，不在服务进程里联网。",
       "items": [
-        "Europe PMC 默认按最新排序，1000 篇会挤在最近 3 个年份；改为按被引降序后年份跨度变为 1978–2024，同时期刊指标覆盖率从 10.7% 升到 52.8%",
+        "Europe PMC 默认按最新排序，1000 篇会挤在最近 3 个年份；改为按被引降序后年份跨度显著拉大（单细胞测序数据集实测 1978–2024），同时 CRISPR 数据集的期刊指标覆盖率从 10.7% 升到 52.8%（两个数字来自不同数据集）",
         "DATA_MODE 支持 local（只读预置）/ remote（实时检索）/ hybrid（本地缺失回落远程）"
       ]
     },
